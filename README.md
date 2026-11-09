@@ -1,19 +1,22 @@
 # Idempotent ERP Sync
 
-> Senior backend demo: **retries are normal — duplicate financial records are not.**
+PHP / Laravel service that syncs vendor bills to **LedgerBridge** with **create-once** semantics.
 
-PHP / Laravel service that syncs a vendor bill to a fictional ERP (**LedgerBridge**) with **create-once** semantics.
+Retries are normal. Duplicate financial records are not.
 
-This is a clean-room portfolio project. No employer code or brands.
+## Problem
 
-## Why this exists
+Queue workers deliver at-least-once. An ERP `create bill` call often is not idempotent.
+If the remote write succeeds and the response is lost, a blind retry creates a second bill.
 
-Interviewers and hiring managers for senior / staff backend roles care whether you can design:
+## Approach
 
-- at-least-once workers without double side effects
-- stable idempotency keys
-- locks + uniqueness where money lands
-- clear API contracts (`202 Accepted` + status read model)
+- Stable idempotency key: `vendor_bill:{order_id}:{bill_type}`
+- DB row lock + uniqueness where the bill is stored
+- LedgerBridge client interface (in-memory adapter for local/test; swappable for HTTP)
+- API accepts work with `202` and exposes a status read model
+
+Details: [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ## Quick start
 
@@ -26,11 +29,9 @@ php artisan migrate
 php artisan test
 ```
 
-Run the API (sync driver for local demos):
-
 ```bash
 php artisan serve
-# QUEUE_CONNECTION=sync is fine for local demos
+# QUEUE_CONNECTION=sync is fine locally
 ```
 
 ```bash
@@ -45,17 +46,6 @@ curl -X POST http://127.0.0.1:8000/api/vendor-bills/sync \
   }'
 ```
 
-## Architecture
-
-See [ARCHITECTURE.md](./ARCHITECTURE.md).
-
-## What “senior” looks like here
-
-- Domain folder (`app/Domain/Sync`) separate from HTTP
-- Interface + fake ERP for deterministic tests
-- Feature test proving **retry ≠ second remote create**
-- Job backoff policy documented in code
-
 ## Stack
 
-PHP 8.3+ · Laravel 13 · SQLite (demo) · PHPUnit
+PHP 8.3+ · Laravel · SQLite (local) · PHPUnit

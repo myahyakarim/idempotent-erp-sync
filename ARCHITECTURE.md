@@ -1,18 +1,18 @@
 # Architecture — Idempotent ERP Sync
 
-Senior-level demo of **create-once external writes** under at-least-once delivery.
+Create-once external writes under at-least-once delivery.
 
 ## Problem
 
-Workers retry. Networks drop responses after the remote system has already committed.
-A naive `POST /bills` on every retry creates **duplicate financial records**.
+Workers retry. Networks can drop responses after the remote system has already committed.
+A naive `POST /bills` on every retry creates duplicate financial records.
 
 ## Design goals
 
-1. Same logical operation → **one** remote bill (and one local projection)
+1. Same logical operation → one remote bill (and one local projection)
 2. Safe under concurrent workers
 3. Observable: every attempt leaves an audit trail
-4. Fake LedgerBridge ERP client is swappable for a real HTTP adapter
+4. LedgerBridge client is an interface — swap the fake for HTTP in production
 
 ## Flow
 
@@ -41,20 +41,20 @@ Stable across retries. Never use a random UUID per attempt.
 
 ## Consistency model
 
-- Local DB is source of truth for “did we already succeed?”
+- Local DB answers “did we already succeed?”
 - Remote create is treated as non-idempotent → guarded by local check + lock
-- Partial failure (remote OK, local write fails) is recovered by storing `remote_reference` when possible and reconciling on next run
+- Partial failure (remote OK, local write fails) is recovered via `remote_reference` and reconcile-on-retry
 
 ## Tradeoffs
 
 | Choice | Why |
 |--------|-----|
-| DB unique + lock | Works without Redis; clear for demos/interviews |
-| Sync job after HTTP 202 | Keeps API fast; failure handling lives in the worker |
-| Fake ERP | Portfolio-safe; proves the pattern without third-party accounts |
+| DB unique + `lockForUpdate` | Strong create-once without requiring Redis |
+| Sync job after HTTP `202` | Keeps the API fast; failure handling lives in the worker |
+| Interface + in-process client | Fast tests locally; replace with HTTP adapter for real LedgerBridge |
 
-## Out of scope (intentionally)
+## Out of scope
 
 - Multi-region active-active
 - Saga orchestration across many aggregates
-- Real ERP auth protocols
+- Full ERP auth protocol surface

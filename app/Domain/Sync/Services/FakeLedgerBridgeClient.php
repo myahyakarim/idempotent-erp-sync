@@ -7,8 +7,8 @@ use App\Domain\Sync\DTO\CreateVendorBillCommand;
 use Illuminate\Support\Str;
 
 /**
- * In-memory stand-in for an external ERP.
- * Tracks creates so tests can assert "how many times did remote create run?".
+ * In-memory LedgerBridge adapter for local/test runs.
+ * Tracks creates so tests can assert remote create count.
  */
 final class FakeLedgerBridgeClient implements ErpClient
 {
