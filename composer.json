@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "yahya0335/idempotent-erp-sync",
+    "name": "myahyakarim/idempotent-erp-sync",
     "type": "project",
     "description": "Senior portfolio demo: idempotent ERP vendor-bill sync under retries.",
     "keywords": ["laravel", "idempotency", "queues", "architecture"],
